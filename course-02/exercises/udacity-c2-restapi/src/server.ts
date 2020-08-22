@@ -9,6 +9,14 @@ import { V0MODELS } from './controllers/v0/model.index';
 
 (async () => {
   await sequelize.addModels(V0MODELS);
+
+  // test connection
+  try {
+    await sequelize.authenticate();
+    console.log('Connection has been established successfully.');
+  } catch (error) {
+    console.error('Unable to connect to the database:', error);
+  }
   await sequelize.sync();
 
   const app = express();

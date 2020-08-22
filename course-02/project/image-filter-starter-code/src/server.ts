@@ -1,6 +1,7 @@
-import express from 'express';
+import express, { Router, Request, Response } from 'express';
 import bodyParser from 'body-parser';
-import {filterImageFromURL, deleteLocalFiles} from './util/util';
+import {filterImageFromURL, deleteLocalFiles, isUrl, isImageFile} from './util/util';
+import { filter } from 'bluebird';
 
 (async () => {
 
@@ -29,6 +30,28 @@ import {filterImageFromURL, deleteLocalFiles} from './util/util';
 
   /**************************************************************************** */
 
+  app.get("/filteredimage/", ( req: Request, res: Response ) => {
+    let { image_url } = req.query;
+    if (!image_url) {
+      return res.status(400).send(`Please provide a url as parameter`);
+    }
+
+    // validate the image url using a REGEX parser + a filetype checker
+    const valid = isUrl(image_url) ? isImageFile(image_url) : false;
+    if (!valid) {
+      return res.status(400).send(`The provided URL ${image_url} is invalid.`);
+    }
+
+    // filter the image
+    let result = filterImageFromURL(image_url).then((f: string) => {
+      return res.status(200).sendFile(f, () => {
+        deleteLocalFiles([f]);
+      });
+    }).catch((r: string) => {
+      return res.status(500)
+        .send("Cannot process image file. Please double check the file URL.")
+    })
+  } );
   //! END @TODO1
   
   // Root Endpoint
